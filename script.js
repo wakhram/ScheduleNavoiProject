@@ -76,6 +76,12 @@ document.addEventListener("DOMContentLoaded", function () {
         const newLang = currentLang === 'kz' ? 'ru' : 'kz';
         setLanguage(newLang);
         localStorage.setItem('lang', newLang);
+        
+        // Reload schedule if it's currently displayed
+        if (document.querySelector('#scheduleTable tbody').children.length > 0 
+            && document.querySelector('#scheduleTable tbody').textContent !== translations[newLang].noData) {
+            loadSchedule();
+        }
     });
 
     function setLanguage(lang) {
@@ -101,8 +107,14 @@ document.addEventListener("DOMContentLoaded", function () {
         headers[1].textContent = translations[lang].subject;
         headers[2].textContent = translations[lang].teacher;
 
-        // Update day select options
+        // Update day select options and preserve selected day index
+        const currentDay = daySelect.value;
+        const currentDayIndex = (lang === 'kz' ? daysKz : daysRu).indexOf(currentDay);
         fillSelect(daySelect, lang === 'kz' ? daysKz : daysRu);
+        if (currentDayIndex !== -1) {
+            const newDays = lang === 'kz' ? daysKz : daysRu;
+            daySelect.value = newDays[currentDayIndex];
+        }
     }
 
     // Add loadSchedule function

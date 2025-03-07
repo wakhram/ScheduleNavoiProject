@@ -141,7 +141,11 @@ document.addEventListener("DOMContentLoaded", function () {
             const sheet = workbook.Sheets[workbook.SheetNames[dayIndex]];
             
             // Convert sheet data to JSON
-            const jsonData = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+            const jsonData = XLSX.utils.sheet_to_json(sheet, { 
+                header: 1,
+                raw: false, // Convert to strings
+                defval: '' // Empty cells become empty strings
+            });
             
             // Update table with schedule data
             updateScheduleTable(jsonData);
@@ -151,24 +155,60 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     };
 
+    function parseSubjectCell(cellContent) {
+        if (!cellContent) return { subject: '-', teacher: '-' };
+        
+        const lines = cellContent.split('\n').map(line => line.trim()).filter(Boolean);
+        
+        // Check if it's a split group (7 lines)
+        if (lines.length >= 6) {
+            return {
+                subject: lines[0], // Just first subject name
+                teacher: `${lines[1]} (${lines[2]}) / ${lines[5]} (${lines[6]})`, // Both teachers with their groups
+                isGroup: true
+            };
+        }
+        
+        // Regular subject (2 lines)
+        return {
+            subject: lines[0] || '-',
+            teacher: lines[1] || '-',
+            isGroup: false
+        };
+    }
+
     function updateScheduleTable(data) {
         const tbody = document.querySelector('#scheduleTable tbody');
         tbody.innerHTML = '';
         
-        // Skip header row if it exists
-        const startRow = data[0][0] === '№' || data[0][0] === 'Time' ? 1 : 0;
+        // Find the first row with time data (looking in column B)
+        let startRow = 0;
+        for (let i = 0; i < data.length; i++) {
+            if (data[i][1] && /^\d{1,2}:\d{2}/.test(String(data[i][1]))) {
+                startRow = i;
+                break;
+            }
+        }
         
+        // Process each row
         for (let i = startRow; i < data.length; i++) {
             const row = data[i];
-            if (!row[0]) continue; // Skip empty rows
+            if (!row[1] || !/^\d{1,2}:\d{2}/.test(String(row[1]))) continue; // Skip rows without time in column B
+            
+            const time = row[1]; // Time is in column B
+            const subjectData = parseSubjectCell(row[2] || ''); // Subject/teacher info in column C
             
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td>${row[0]}</td>
-                <td>${row[1] || '-'}</td>
-                <td>${row[2] || '-'}</td>
+                <td>${time}</td>
+                <td>${subjectData.subject}</td>
+                <td>${subjectData.teacher}</td>
             `;
             tbody.appendChild(tr);
+        }
+        
+        if (tbody.children.length === 0) {
+            showError(translations[html.getAttribute('data-lang')].noData);
         }
     }
 

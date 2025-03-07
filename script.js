@@ -136,19 +136,17 @@ document.addEventListener("DOMContentLoaded", function () {
             const data = new Uint8Array(arrayBuffer);
             const workbook = XLSX.read(data, { type: 'array' });
             
-            // Get the sheet for the selected day
-            const dayIndex = (currentLang === 'kz' ? daysKz : daysRu).indexOf(day);
-            const sheet = workbook.Sheets[workbook.SheetNames[dayIndex]];
+            // Get first sheet instead of looking for specific day
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
             
-            // Convert sheet data to JSON
             const jsonData = XLSX.utils.sheet_to_json(sheet, { 
                 header: 1,
-                raw: false, // Convert to strings
-                defval: '' // Empty cells become empty strings
+                raw: false,
+                defval: ''
             });
             
             // Update table with schedule data
-            updateScheduleTable(jsonData);
+            updateScheduleTable(jsonData, day, currentLang);
         } catch (error) {
             console.error('Error loading schedule:', error);
             showError(currentLang === 'kz' ? translations.kz.noData : translations.ru.noData);
@@ -164,7 +162,7 @@ document.addEventListener("DOMContentLoaded", function () {
         if (lines.length >= 6) {
             return {
                 subject: lines[0], // Just first subject name
-                teacher: `${lines[1]} (${lines[2]}) / ${lines[5]} (${lines[6]})`, // Both teachers with their groups
+                teacher: `${lines[1]} (${lines[2]}) / ${lines[4]} (${lines[5]})`, // Both teachers with their groups
                 isGroup: true
             };
         }
@@ -177,11 +175,15 @@ document.addEventListener("DOMContentLoaded", function () {
         };
     }
 
-    function updateScheduleTable(data) {
+    function updateScheduleTable(data, selectedDay, currentLang) {
         const tbody = document.querySelector('#scheduleTable tbody');
         tbody.innerHTML = '';
         
-        // Find the first row with time data (looking in column B)
+        // Get day column index (2 for Monday, 3 for Tuesday, etc.)
+        const days = currentLang === 'kz' ? daysKz : daysRu;
+        const dayIndex = days.indexOf(selectedDay) + 2; // +2 because time is in column B (index 1)
+        
+        // Find the first row with time data
         let startRow = 0;
         for (let i = 0; i < data.length; i++) {
             if (data[i][1] && /^\d{1,2}:\d{2}/.test(String(data[i][1]))) {
@@ -193,10 +195,10 @@ document.addEventListener("DOMContentLoaded", function () {
         // Process each row
         for (let i = startRow; i < data.length; i++) {
             const row = data[i];
-            if (!row[1] || !/^\d{1,2}:\d{2}/.test(String(row[1]))) continue; // Skip rows without time in column B
+            if (!row[1] || !/^\d{1,2}:\d{2}/.test(String(row[1]))) continue;
             
-            const time = row[1]; // Time is in column B
-            const subjectData = parseSubjectCell(row[2] || ''); // Subject/teacher info in column C
+            const time = row[1];
+            const subjectData = parseSubjectCell(row[dayIndex] || '');
             
             const tr = document.createElement('tr');
             tr.innerHTML = `
@@ -208,7 +210,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         
         if (tbody.children.length === 0) {
-            showError(translations[html.getAttribute('data-lang')].noData);
+            showError(translations[currentLang].noData);
         }
     }
 

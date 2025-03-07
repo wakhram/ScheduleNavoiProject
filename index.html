@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html data-theme="light" data-lang="kz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="assets/icon.ico">
+    <title>Мектеп кестесі</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <img src="assets/icon.png" alt="logo">
+        <h1>Ә.Науаи атындағы №13 мектеп-гимназия</h1>
+        <div class="header-controls">
+            <button class="theme-toggle" id="themeToggle">🌓</button>
+            <button class="lang-switch" id="langSwitch">
+                <img src="assets/kazakh.png" alt="Language" id="langIcon">
+            </button>
+        </div>
+    </header>
+    
+    <main>
+        <h1>Сабақ кестесі</h1>
+        <div class="filters">
+            <label>
+                Сынып:
+                <select id="gradeSelect"></select>
+            </label>
+            <label>
+                Әріп:
+                <select id="classSelect"></select>
+            </label>
+            <label>
+                Апта күні:
+                <select id="daySelect"></select>
+            </label>
+            <button onclick="loadSchedule()">Жүктеу</button>
+        </div>
+
+        <table id="scheduleTable">
+            <thead>
+                <tr>
+                    <th>Уақыт</th>
+                    <th>Пән</th>
+                    <th>Мұғалім</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </main>
+    <script src="https://unpkg.com/xlsx/dist/xlsx.full.min.js"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>
